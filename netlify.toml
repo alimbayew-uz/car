@@ -1,0 +1,81 @@
+# Netlify Configuration File
+# This file is optional but recommended for production
+
+[build]
+  # No build step needed - pure static files
+  command = ""
+  publish = "."
+
+# Caching strategy for assets
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+    X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# HTML should not be cached (always get latest version)
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+
+# Redirects for single-page app (if needed)
+# Uncomment if you add client-side routing
+# [[redirects]]
+#   from = "/*"
+#   to = "/index.html"
+#   status = 200
+
+# Custom domain redirect (optional)
+# Redirect www to non-www
+# [[redirects]]
+#   from = "https://www.carrace.com/*"
+#   to = "https://carrace.com/:splat"
+#   status = 301
+#   force = true
+
+# Environment variables (if needed)
+# [context.production.environment]
+#   VITE_API_URL = "https://api.carrace.com"
+#   VITE_APP_MODE = "production"
+
+# [context.development]
+#   command = "npm run dev"
+#   environment = { VITE_API_URL = "http://localhost:3000" }
+
+# [context.deploy-preview]
+#   environment = { VITE_API_URL = "https://preview-api.carrace.com" }
+
+# Edge functions (if you add them later)
+# [[edge]]
+#   function = "validate-auth"
+#   path = "/api/*"
+
+# Form handling
+# [context.production]
+#   # Enable form submissions
+#   environment = { NETLIFY_FORMS = "true" }
+
+# Monitoring and analytics
+# [dev]
+#   command = "netlify dev"
+#   port = 3000
+#   targetPort = 3000
+
+# Deployment timeout
+[build.environment]
+  timeout = 300

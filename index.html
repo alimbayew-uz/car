@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Multiplayer Car Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Auth Screens */
+        .auth-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .auth-container h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+            width: auto;
+        }
+
+        .auth-toggle {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .auth-toggle a {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Lobby Screen */
+        .lobby-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .lobby-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+        }
+
+        .lobby-header h1 {
+            color: #333;
+        }
+
+        .lobby-header .user-info {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .lobby-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .rooms-container {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 2px solid #eee;
+            border-radius: 5px;
+            padding: 20px;
+        }
+
+        .room-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .room-info h3 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .room-info p {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .room-info {
+            flex: 1;
+        }
+
+        /* Map Editor */
+        .map-editor-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .editor-tools {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .tool-btn {
+            padding: 8px 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tool-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .tool-btn:hover {
+            border-color: #667eea;
+        }
+
+        #mapCanvas {
+            border: 2px solid #333;
+            cursor: crosshair;
+            background: white;
+            display: block;
+            margin: 20px auto;
+        }
+
+        .canvas-info {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+
+        /* Car Selection */
+        .car-selection-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 1000px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .selection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+        }
+
+        .cars-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .car-card {
+            background: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .car-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .car-card.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .car-card-model {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .car-card.selected .car-card-model {
+            color: white;
+        }
+
+        .car-card-info {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .car-card.selected .car-card-info {
+            color: #eee;
+        }
+
+        .selection-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+
+        .ready-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+
+        .ready-checkbox input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .players-list {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .player-badge {
+            background: #f0f0f0;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .player-badge.ready {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #999;
+        }
+
+        .player-badge.ready .status-indicator {
+            background: #28a745;
+        }
+
+        /* 3D Gameplay */
+        #gameContainer {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .game-hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            min-width: 250px;
+            z-index: 100;
+        }
+
+        .hud-item {
+            margin: 8px 0;
+        }
+
+        .hud-label {
+            color: #aaa;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .hud-value {
+            color: #0f0;
+            font-weight: bold;
+        }
+
+        .game-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 12px;
+            z-index: 100;
+        }
+
+        .game-controls p {
+            margin: 5px 0;
+        }
+
+        .exit-game-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 100;
+        }
+
+        .exit-game-btn:hover {
+            background: #c82333;
+        }
+
+        .players-hud {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 12px;
+            min-width: 200px;
+            z-index: 100;
+        }
+
+        .player-entry {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.1);
+            border-left: 3px solid #667eea;
+            border-radius: 3px;
+        }
+
+        .player-entry.self {
+            border-left-color: #28a745;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 18px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .auth-container,
+            .lobby-container,
+            .map-editor-container,
+            .car-selection-container {
+                margin: 20px;
+                max-width: 100%;
+            }
+
+            .cars-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+
+            .game-hud,
+            .game-controls,
+            .players-hud {
+                font-size: 12px;
+                padding: 10px;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- LOGIN SCREEN -->
+        <div id="loginScreen" class="screen active">
+            <div class="auth-container">
+                <h1>🏎️ Car Race</h1>
+                <div class="error-message" id="loginError"></div>
+                <div class="form-group">
+                    <label>Email or Username</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••">
+                </div>
+                <button class="btn btn-primary" id="loginBtn">Login</button>
+                <div class="auth-toggle">
+                    Don't have an account? <a onclick="switchToRegister()">Register here</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- REGISTER SCREEN -->
+        <div id="registerScreen" class="screen">
+            <div class="auth-container">
+                <h1>🏎️ Create Account</h1>
+                <div class="error-message" id="registerError"></div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="registerEmail" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="registerUsername" placeholder="username">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="registerPassword" placeholder="••••••••">
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" id="registerPasswordConfirm" placeholder="••••••••">
+                </div>
+                <button class="btn btn-primary" id="registerBtn">Register</button>
+                <div class="auth-toggle">
+                    Already have an account? <a onclick="switchToLogin()">Login here</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOBBY SCREEN -->
+        <div id="lobbyScreen" class="screen">
+            <div class="lobby-container">
+                <div class="lobby-header">
+                    <h1>🏎️ Multiplayer Lobby</h1>
+                    <div>
+                        <div class="user-info" id="userEmail"></div>
+                        <button class="btn btn-secondary btn-small" onclick="logoutUser()">Logout</button>
+                    </div>
+                </div>
+
+                <div class="lobby-actions">
+                    <button class="btn btn-primary" id="createRoomBtn">Create Room</button>
+                    <button class="btn btn-primary" id="randomRoomBtn">Join Random Room</button>
+                </div>
+
+                <h2 style="margin-bottom: 15px;">Available Rooms</h2>
+                <div class="rooms-container" id="roomsList">
+                    <p style="color: #999;">Loading rooms...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAP EDITOR SCREEN -->
+        <div id="mapEditorScreen" class="screen">
+            <div class="map-editor-container">
+                <div class="editor-header">
+                    <h1>🗺️ Design Your Track</h1>
+                    <div class="editor-tools">
+                        <button class="tool-btn active" id="wallTool" onclick="selectTool('wall')">🧱 Wall</button>
+                        <button class="tool-btn" id="roadTool" onclick="selectTool('road')">🛣️ Road</button>
+                        <button class="tool-btn" id="eraserTool" onclick="selectTool('eraser')">🗑️ Eraser</button>
+                        <button class="btn btn-primary btn-small" id="completeMapBtn">Complete & Start</button>
+                    </div>
+                </div>
+                <p class="canvas-info">Left-click to draw, hold to paint. Grid size: 32x32 cells</p>
+                <canvas id="mapCanvas" width="640" height="640"></canvas>
+                <p class="canvas-info" style="color: #667eea;">Walls (blue), Roads (gray)</p>
+            </div>
+        </div>
+
+        <!-- CAR SELECTION SCREEN -->
+        <div id="carSelectionScreen" class="screen">
+            <div class="car-selection-container">
+                <div class="selection-header">
+                    <h1>🏎️ Select Your Car</h1>
+                    <div id="playerWaitingList"></div>
+                </div>
+
+                <div class="players-list" id="playersList"></div>
+
+                <div class="cars-grid" id="carsGrid"></div>
+
+                <div class="selection-footer">
+                    <div class="ready-checkbox">
+                        <input type="checkbox" id="readyCheckbox">
+                        <label for="readyCheckbox">I'm Ready!</label>
+                    </div>
+                    <button class="btn btn-primary" id="startGameBtn" disabled>Start Game</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GAMEPLAY SCREEN -->
+        <div id="gameplayScreen" class="screen">
+            <div id="gameContainer">
+                <div class="game-hud" id="gameHUD">
+                    <div class="hud-item">
+                        <div class="hud-label">Position</div>
+                        <div class="hud-value" id="hudPosition">X: 0 Y: 0 Z: 0</div>
+                    </div>
+                    <div class="hud-item">
+                        <div class="hud-label">Speed</div>
+                        <div class="hud-value" id="hudSpeed">0</div>
+                    </div>
+                    <div class="hud-item">
+                        <div class="hud-label">Players</div>
+                        <div class="hud-value" id="hudPlayers">0</div>
+                    </div>
+                </div>
+
+                <div class="players-hud" id="playersHUD"></div>
+
+                <div class="game-controls">
+                    <p><strong>Controls:</strong></p>
+                    <p>↑ W / Arrow Up - Forward</p>
+                    <p>↓ S / Arrow Down - Backward</p>
+                    <p>← A / Arrow Left - Turn Left</p>
+                    <p>→ D / Arrow Right - Turn Right</p>
+                </div>
+
+                <button class="exit-game-btn" onclick="exitGame()">Exit Game</button>
+            </div>
+        </div>
+
+        <!-- LOADING SCREEN -->
+        <div id="loadingScreen" class="screen">
+            <div class="loading">
+                <div class="spinner"></div>
+                <div class="loading-text" id="loadingText">Initializing...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // ============================================
+        // FIREBASE CONFIGURATION
+        // ============================================
+        
+        // IMPORTANT: Replace these with your Firebase config from Firebase Console
+        const firebaseConfig = {
+            apiKey: "AIzaSyDemoKeyHereReplace",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ============================================
+        // GLOBAL STATE
+        // ============================================
+        
+        const gameState = {
+            currentUser: null,
+            currentRoom: null,
+            selectedCar: null,
+            isReady: false,
+            cars: [
+                { id: 1, name: 'BMW E39', color: 0x1f4788 },
+                { id: 2, name: 'Mercedes E-Class', color: 0x2d2d2d },
+                { id: 3, name: 'Audi A4', color: 0x8b0000 },
+                { id: 4, name: 'Volkswagen Golf', color: 0xffd700 },
+                { id: 5, name: 'Porsche 911', color: 0xff1493 },
+                { id: 6, name: 'Ferrari F430', color: 0xff0000 },
+                { id: 7, name: 'Lamborghini', color: 0xffff00 },
+                { id: 8, name: 'Corvette', color: 0x00bfff },
+                { id: 9, name: 'Mustang GT', color: 0xff6347 },
+                { id: 10, name: 'Dodge Charger', color: 0x1e90ff },
+                { id: 11, name: 'Nissan GT-R', color: 0x00ff00 },
+                { id: 12, name: 'Honda Civic', color: 0x87ceeb },
+                { id: 13, name: 'Toyota Supra', color: 0xff00ff },
+                { id: 14, name: 'Mazda RX-7', color: 0xffa500 },
+                { id: 15, name: 'Subaru WRX', color: 0x4b0082 },
+                { id: 16, name: 'Mitsubishi Lancer', color: 0x228b22 },
+                { id: 17, name: 'Hyundai N', color: 0x00ced1 },
+                { id: 18, name: 'Kia Stinger', color: 0xdaa520 },
+                { id: 19, name: 'Genesis G70', color: 0xc0c0c0 },
+                { id: 20, name: 'Lexus RC', color: 0x696969 }
+            ],
+            // 3D Game State
+            scene: null,
+            camera: null,
+            renderer: null,
+            playerCar: null,
+            otherPlayers: {},
+            mapData: null,
+            physicsState: {
+                position: new THREE.Vector3(5, 0.5, 5),
+                velocity: new THREE.Vector3(0, 0, 0),
+                rotation: 0,
+                speed: 0
+            },
+            keys: {},
+            gameRunning: false
+        };
+
+        // ============================================
+        // AUTHENTICATION FUNCTIONS
+        // ============================================
+        
+        function switchToLogin() {
+            showScreen('loginScreen');
+        }
+
+        function switchToRegister() {
+            showScreen('registerScreen');
+        }
+
+        async function loginUser() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errorEl = document.getElementById('loginError');
+
+            if (!email || !password) {
+                showError(errorEl, 'Please fill in all fields');
+                return;
+            }
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                errorEl.classList.remove('show');
+            } catch (error) {
+                showError(errorEl, error.message);
+            }
+        }
+
+        async function registerUser() {
+            const email = document.getElementById('registerEmail').value.trim();
+            const username = document.getElementById('registerUsername').value.trim();
+            const password = document.getElementById('registerPassword').value.trim();
+            const confirmPassword = document.getElementById('registerPasswordConfirm').value.trim();
+            const errorEl = document.getElementById('registerError');
+
+            if (!email || !username || !password || !confirmPassword) {
+                showError(errorEl, 'Please fill in all fields');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showError(errorEl, 'Passwords do not match');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError(errorEl, 'Password must be at least 6 characters');
+                return;
+            }
+
+            try {
+                await auth.createUserWithEmailAndPassword(email, password);
+                
+                // Store username in Firestore
+                await db.collection('users').doc(auth.currentUser.uid).set({
+                    email: email,
+                    username: username,
+                    createdAt: new Date()
+                });
+
+                document.getElementById('registerEmail').value = '';
+                document.getElementById('registerUsername').value = '';
+                document.getElementById('registerPassword').value = '';
+                document.getElementById('registerPasswordConfirm').value = '';
+                errorEl.classList.remove('show');
+                
+                showScreen('loginScreen');
+                showError(document.getElementById('loginError'), 'Registration successful! Please login.', false);
+            } catch (error) {
+                showError(errorEl, error.message);
+            }
+        }
+
+        async function logoutUser() {
+            try {
+                await auth.signOut();
+                gameState.currentUser = null;
+                gameState.currentRoom = null;
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        function showError(element, message, isError = true) {
+            if (isError) {
+                element.textContent = '❌ ' + message;
+            } else {
+                element.textContent = '✅ ' + message;
+            }
+            element.classList.add('show');
+            setTimeout(() => element.classList.remove('show'), 5000);
+        }
+
+        // ============================================
+        // SCREEN MANAGEMENT
+        // ============================================
+        
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // ============================================
+        // LOBBY MANAGEMENT
+        // ============================================
+        
+        async function createRoom() {
+            if (!gameState.currentUser) return;
+
+            try {
+                showScreen('loadingScreen');
+                document.getElementById('loadingText').textContent = 'Creating room...';
+
+                const roomData = {
+                    creatorId: gameState.currentUser.uid,
+                    creatorEmail: gameState.currentUser.email,
+                    status: 'waiting',
+                    mapData: null,
+                    createdAt: new Date(),
+                    maxPlayers: 8,
+                    players: {}
+                };
+
+                const roomRef = await db.collection('rooms').add(roomData);
+                gameState.currentRoom = roomRef.id;
+
+                // Add current player to room
+                await db.collection('rooms').doc(roomRef.id).collection('players').doc(gameState.currentUser.uid).set({
+                    email: gameState.currentUser.email,
+                    car: null,
+                    ready: false,
+                    joinedAt: new Date()
+                });
+
+                // Go to map editor
+                showScreen('mapEditorScreen');
+                initMapEditor();
+            } catch (error) {
+                console.error('Create room error:', error);
+                showScreen('lobbyScreen');
+            }
+        }
+
+        async function joinRandomRoom() {
+            if (!gameState.currentUser) return;
+
+            try {
+                showScreen('loadingScreen');
+                document.getElementById('loadingText').textContent = 'Finding available room...';
+
+                const snapshot = await db.collection('rooms')
+                    .where('status', '==', 'waiting')
+                    .limit(1)
+                    .get();
+
+                if (snapshot.empty) {
+                    showScreen('lobbyScreen');
+                    showError(document.getElementById('loginError'), 'No available rooms. Create one!');
+                    return;
+                }
+
+                const room = snapshot.docs[0];
+                gameState.currentRoom = room.id;
+
+                // Add player to room
+                await db.collection('rooms').doc(room.id).collection('players').doc(gameState.currentUser.uid).set({
+                    email: gameState.currentUser.email,
+                    car: null,
+                    ready: false,
+                    joinedAt: new Date()
+                });
+
+                // Load car selection
+                showScreen('loadingScreen');
+                document.getElementById('loadingText').textContent = 'Loading game...';
+                loadCarSelection();
+            } catch (error) {
+                console.error('Join room error:', error);
+                showScreen('lobbyScreen');
+            }
+        }
+
+        async function updateRoomsList() {
+            if (!gameState.currentUser) return;
+
+            try {
+                const snapshot = await db.collection('rooms')
+                    .where('status', '==', 'waiting')
+                    .onSnapshot(async (querySnapshot) => {
+                        const roomsList = document.getElementById('roomsList');
+                        roomsList.innerHTML = '';
+
+                        if (querySnapshot.empty) {
+                            roomsList.innerHTML = '<p style="color: #999;">No available rooms. Create one to get started!</p>';
+                            return;
+                        }
+
+                        for (const doc of querySnapshot.docs) {
+                            const room = doc.data();
+                            const playersSnapshot = await db.collection('rooms').doc(doc.id).collection('players').get();
+                            const playerCount = playersSnapshot.size;
+
+                            const roomEl = document.createElement('div');
+                            roomEl.className = 'room-item';
+                            roomEl.innerHTML = `
+                                <div class="room-info">
+                                    <h3>Room by ${room.creatorEmail.split('@')[0]}</h3>
+                                    <p>Players: ${playerCount}/${room.maxPlayers}</p>
+                                    <p>Status: ${room.status}</p>
+                                </div>
+                                <button class="btn btn-primary btn-small" onclick="joinRoom('${doc.id}')">Join</button>
+                            `;
+                            roomsList.appendChild(roomEl);
+                        }
+                    });
+            } catch (error) {
+                console.error('Update rooms list error:', error);
+            }
+        }
+
+        async function joinRoom(roomId) {
+            if (!gameState.currentUser) return;
+
+            try {
+                showScreen('loadingScreen');
+                document.getElementById('loadingText').textContent = 'Joining room...';
+
+                gameState.currentRoom = roomId;
+
+                // Add player to room
+                await db.collection('rooms').doc(roomId).collection('players').doc(gameState.currentUser.uid).set({
+                    email: gameState.currentUser.email,
+                    car: null,
+                    ready: false,
+                    joinedAt: new Date()
+                });
+
+                // Load car selection
+                loadCarSelection();
+            } catch (error) {
+                console.error('Join room error:', error);
+                showScreen('lobbyScreen');
+            }
+        }
+
+        // ============================================
+        // MAP EDITOR
+        // ============================================
+        
+        let mapEditorState = {
+            canvas: null,
+            ctx: null,
+            cellSize: 20,
+            currentTool: 'wall',
+            isDrawing: false,
+            mapArray: []
+        };
+
+        function initMapEditor() {
+            const canvas = document.getElementById('mapCanvas');
+            mapEditorState.canvas = canvas;
+            mapEditorState.ctx = canvas.getContext('2d');
+            mapEditorState.cellSize = canvas.width / 32;
+
+            // Initialize empty map
+            mapEditorState.mapArray = Array(32 * 32).fill(0);
+
+            // Draw grid
+            drawMapGrid();
+
+            // Mouse events
+            canvas.addEventListener('mousedown', (e) => {
+                mapEditorState.isDrawing = true;
+                handleMapClick(e);
+            });
+            canvas.addEventListener('mousemove', (e) => {
+                if (mapEditorState.isDrawing) handleMapClick(e);
+            });
+            canvas.addEventListener('mouseup', () => {
+                mapEditorState.isDrawing = false;
+            });
+            canvas.addEventListener('mouseleave', () => {
+                mapEditorState.isDrawing = false;
+            });
+        }
+
+        function drawMapGrid() {
+            const canvas = mapEditorState.canvas;
+            const ctx = mapEditorState.ctx;
+            const cellSize = mapEditorState.cellSize;
+
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#eee';
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i <= 32; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * cellSize, 0);
+                ctx.lineTo(i * cellSize, canvas.height);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(0, i * cellSize);
+                ctx.lineTo(canvas.width, i * cellSize);
+                ctx.stroke();
+            }
+
+            // Draw existing map
+            for (let i = 0; i < 32; i++) {
+                for (let j = 0; j < 32; j++) {
+                    const index = i * 32 + j;
+                    const cell = mapEditorState.mapArray[index];
+                    
+                    if (cell === 1) {
+                        ctx.fillStyle = '#4169e1';
+                        ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+                    } else if (cell === 2) {
+                        ctx.fillStyle = '#999';
+                        ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+        }
+
+        function handleMapClick(e) {
+            const rect = mapEditorState.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const cellSize = mapEditorState.cellSize;
+
+            const col = Math.floor(x / cellSize);
+            const row = Math.floor(y / cellSize);
+
+            if (col >= 0 && col < 32 && row >= 0 && row < 32) {
+                const index = row * 32 + col;
+                
+                if (mapEditorState.currentTool === 'wall') {
+                    mapEditorState.mapArray[index] = 1;
+                } else if (mapEditorState.currentTool === 'road') {
+                    mapEditorState.mapArray[index] = 2;
+                } else if (mapEditorState.currentTool === 'eraser') {
+                    mapEditorState.mapArray[index] = 0;
+                }
+
+                drawMapGrid();
+            }
+        }
+
+        function selectTool(tool) {
+            mapEditorState.currentTool = tool;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tool + 'Tool').classList.add('active');
+        }
+
+        async function completeMap() {
+            if (!gameState.currentRoom || !gameState.currentUser) return;
+
+            try {
+                showScreen('loadingScreen');
+                document.getElementById('loadingText').textContent = 'Saving map...';
+
+                // Compress and save map data
+                gameState.mapData = mapEditorState.mapArray;
+                
+                await db.collection('rooms').doc(gameState.currentRoom).update({
+                    mapData: mapEditorState.mapArray.join(',')
+                });
+
+                // Load car selection
+                loadCarSelection();
+            } catch (error) {
+                console.error('Complete map error:', error);
+                showScreen('mapEditorScreen');
+            }
+        }
+
+        // ============================================
+        // CAR SELECTION
+        // ============================================
+        
+        function loadCarSelection() {
+            showScreen('loadingScreen');
+            document.getElementById('loadingText').textContent = 'Loading car selection...';
+
+            if (!gameState.currentRoom || !gameState.currentUser) return;
+
+            // Populate cars grid
+            const carsGrid = document.getElementById('carsGrid');
+            carsGrid.innerHTML = '';
+            gameState.cars.forEach((car, index) => {
+                const carCard = document.createElement('div');
+                carCard.className = 'car-card';
+                carCard.innerHTML = `
+                    <div class="car-card-model">${car.name}</div>
+                    <div class="car-card-info">ID: ${car.id}</div>
+                `;
+                carCard.onclick = () => selectCar(car, carCard);
+                carsGrid.appendChild(carCard);
+            });
+
+            // Listen for player updates
+            listenToPlayersInRoom();
+
+            // Listen for ready checkbox
+            document.getElementById('readyCheckbox').addEventListener('change', async (e) => {
+                gameState.isReady = e.target.checked;
+                try {
+                    await db.collection('rooms').doc(gameState.currentRoom)
+                        .collection('players').doc(gameState.currentUser.uid).update({
+                            ready: gameState.isReady
+                        });
+                } catch (error) {
+                    console.error('Update ready error:', error);
+                }
+            });
+
+            // Listen for game start
+            listenForGameStart();
+
+            setTimeout(() => {
+                showScreen('carSelectionScreen');
+            }, 500);
+        }
+
+        function selectCar(car, element) {
+            gameState.selectedCar = car;
+            document.querySelectorAll('.car-card').forEach(card => card.classList.remove('selected'));
+            element.classList.add('selected');
+
+            if (gameState.currentRoom && gameState.currentUser) {
+                db.collection('rooms').doc(gameState.currentRoom)
+                    .collection('players').doc(gameState.currentUser.uid).update({
+                        car: car.id
+                    });
+            }
+        }
+
+        async function listenToPlayersInRoom() {
+            if (!gameState.currentRoom) return;
+
+            db.collection('rooms').doc(gameState.currentRoom)
+                .collection('players').onSnapshot((snapshot) => {
+                    const playersList = document.getElementById('playersList');
+                    playersList.innerHTML = '';
+
+                    let allReady = true;
+                    let creatorReady = false;
+
+                    snapshot.forEach((doc) => {
+                        const player = doc.data();
+                        const isSelf = doc.id === gameState.currentUser.uid;
+                        
+                        const badge = document.createElement('div');
+                        badge.className = `player-badge ${player.ready ? 'ready' : ''}`;
+                        badge.innerHTML = `
+                            <span class="status-indicator"></span>
+                            ${player.email.split('@')[0]}
+                        `;
+                        playersList.appendChild(badge);
+
+                        if (!player.ready) allReady = false;
+
+                        // Check if this is the room creator
+                        if (isSelf) {
+                            creatorReady = player.ready;
+                        }
+                    });
+
+                    // Enable start button only if creator is ready and all players are ready
+                    const isCreator = gameState.currentUser && 
+                        gameState.currentUser.uid === 
+                        db.collection('rooms').doc(gameState.currentRoom).collection('players');
+                    
+                    if (allReady && snapshot.size > 1) {
+                        document.getElementById('startGameBtn').disabled = false;
+                    } else {
+                        document.getElementById('startGameBtn').disabled = true;
+                    }
+                });
+        }
+
+        function listenForGameStart() {
+            if (!gameState.currentRoom) return;
+
+            db.collection('rooms').doc(gameState.currentRoom).onSnapshot((doc) => {
+                const room = doc.data();
+                if (room && room.status === 'playing') {
+                    startGame();
+                }
+            });
+        }
+
+        document.getElementById('startGameBtn')?.addEventListener('click', async () => {
+            if (!gameState.currentRoom || !gameState.currentUser) return;
+
+            try {
+                await db.collection('rooms').doc(gameState.currentRoom).update({
+                    status: 'playing'
+                });
+            } catch (error) {
+                console.error('Start game error:', error);
+            }
+        });
+
+        // ============================================
+        // 3D GAMEPLAY
+        // ============================================
+        
+        function startGame() {
+            showScreen('gameplayScreen');
+            
+            setTimeout(() => {
+                init3DScene();
+                setupGameLoop();
+                setupInputHandling();
+                syncPlayerPosition();
+                renderOtherPlayers();
+            }, 100);
+        }
+
+        function init3DScene() {
+            const container = document.getElementById('gameContainer');
+            container.innerHTML = `
+                <div class="game-hud" id="gameHUD">
+                    <div class="hud-item">
+                        <div class="hud-label">Position</div>
+                        <div class="hud-value" id="hudPosition">X: 0 Y: 0 Z: 0</div>
+                    </div>
+                    <div class="hud-item">
+                        <div class="hud-label">Speed</div>
+                        <div class="hud-value" id="hudSpeed">0</div>
+                    </div>
+                    <div class="hud-item">
+                        <div class="hud-label">Players</div>
+                        <div class="hud-value" id="hudPlayers">0</div>
+                    </div>
+                </div>
+
+                <div class="players-hud" id="playersHUD"></div>
+
+                <div class="game-controls">
+                    <p><strong>Controls:</strong></p>
+                    <p>↑ W / Arrow Up - Forward</p>
+                    <p>↓ S / Arrow Down - Backward</p>
+                    <p>← A / Arrow Left - Turn Left</p>
+                    <p>→ D / Arrow Right - Turn Right</p>
+                </div>
+
+                <button class="exit-game-btn" onclick="exitGame()">Exit Game</button>
+            `;
+
+            // Scene setup
+            gameState.scene = new THREE.Scene();
+            gameState.scene.background = new THREE.Color(0x87ceeb);
+            gameState.scene.fog = new THREE.Fog(0x87ceeb, 100, 200);
+
+            // Camera
+            gameState.camera = new THREE.PerspectiveCamera(
+                75,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            gameState.camera.position.set(0, 5, 10);
+
+            // Renderer
+            gameState.renderer = new THREE.WebGLRenderer({ antialias: true });
+            gameState.renderer.setSize(window.innerWidth, window.innerHeight);
+            gameState.renderer.shadowMap.enabled = true;
+            gameState.renderer.shadowMap.type = THREE.PCFShadowShadowMap;
+            container.appendChild(gameState.renderer.domElement);
+
+            // Lighting
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+            sunLight.position.set(50, 50, 50);
+            sunLight.castShadow = true;
+            sunLight.shadow.camera.left = -100;
+            sunLight.shadow.camera.right = 100;
+            sunLight.shadow.camera.top = 100;
+            sunLight.shadow.camera.bottom = -100;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            gameState.scene.add(sunLight);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            gameState.scene.add(ambientLight);
+
+            // Ground
+            const groundGeometry = new THREE.PlaneGeometry(64, 64);
+            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x90ee90 });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            gameState.scene.add(ground);
+
+            // Load map from Firestore and create 3D environment
+            if (gameState.mapData) {
+                createMapFromData(gameState.mapData);
+            } else if (gameState.currentRoom) {
+                db.collection('rooms').doc(gameState.currentRoom).get().then((doc) => {
+                    const room = doc.data();
+                    if (room && room.mapData) {
+                        gameState.mapData = room.mapData.split(',').map(Number);
+                        createMapFromData(gameState.mapData);
+                    }
+                });
+            }
+
+            // Create player car
+            createPlayerCar();
+
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize);
+
+            gameState.gameRunning = true;
+        }
+
+        function createMapFromData(mapArray) {
+            const cellSize = 2;
+            const gridSize = 32;
+            const wallHeight = 2;
+            const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+            const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x666666 });
+
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const index = i * gridSize + j;
+                    const cell = mapArray[index];
+
+                    if (cell === 1) {
+                        // Wall
+                        const geometry = new THREE.BoxGeometry(cellSize, wallHeight, cellSize);
+                        const mesh = new THREE.Mesh(geometry, wallMaterial);
+                        mesh.position.set(
+                            j * cellSize - gridSize * cellSize / 2,
+                            wallHeight / 2,
+                            i * cellSize - gridSize * cellSize / 2
+                        );
+                        mesh.castShadow = true;
+                        mesh.receiveShadow = true;
+                        gameState.scene.add(mesh);
+                        mesh.userData.type = 'wall';
+                    } else if (cell === 2) {
+                        // Road
+                        const geometry = new THREE.PlaneGeometry(cellSize, cellSize);
+                        const mesh = new THREE.Mesh(geometry, roadMaterial);
+                        mesh.rotation.x = -Math.PI / 2;
+                        mesh.position.set(
+                            j * cellSize - gridSize * cellSize / 2,
+                            0.01,
+                            i * cellSize - gridSize * cellSize / 2
+                        );
+                        mesh.receiveShadow = true;
+                        gameState.scene.add(mesh);
+                    }
+                }
+            }
+        }
+
+        function createPlayerCar() {
+            // Create a simple car shape (cube)
+            const geometry = new THREE.BoxGeometry(0.8, 0.6, 1.8);
+            const color = gameState.selectedCar ? gameState.selectedCar.color : 0xff0000;
+            const material = new THREE.MeshStandardMaterial({ color: color });
+            const car = new THREE.Mesh(geometry, material);
+            
+            car.position.copy(gameState.physicsState.position);
+            car.castShadow = true;
+            car.receiveShadow = true;
+            
+            gameState.playerCar = car;
+            gameState.scene.add(car);
+
+            // Add wheels
+            const wheelGeometry = new THREE.CylinderGeometry(0.35, 0.35, 0.3, 16);
+            const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+
+            const wheelPositions = [
+                [-0.3, 0.1, 0.4],
+                [0.3, 0.1, 0.4],
+                [-0.3, 0.1, -0.4],
+                [0.3, 0.1, -0.4]
+            ];
+
+            wheelPositions.forEach(pos => {
+                const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                wheel.rotation.z = Math.PI / 2;
+                wheel.position.set(pos[0], pos[1], pos[2]);
+                wheel.castShadow = true;
+                car.add(wheel);
+            });
+        }
+
+        function setupInputHandling() {
+            window.addEventListener('keydown', (e) => {
+                gameState.keys[e.key.toLowerCase()] = true;
+            });
+
+            window.addEventListener('keyup', (e) => {
+                gameState.keys[e.key.toLowerCase()] = false;
+            });
+        }
+
+        function setupGameLoop() {
+            function gameLoop() {
+                requestAnimationFrame(gameLoop);
+
+                if (!gameState.gameRunning) return;
+
+                // Update physics
+                updateCarPhysics();
+
+                // Update HUD
+                updateGameHUD();
+
+                // Update camera to follow car
+                const cameraDistance = 8;
+                const cameraHeight = 4;
+                const targetX = gameState.playerCar.position.x - Math.sin(gameState.physicsState.rotation) * cameraDistance;
+                const targetZ = gameState.playerCar.position.z - Math.cos(gameState.physicsState.rotation) * cameraDistance;
+
+                gameState.camera.position.lerp(
+                    new THREE.Vector3(targetX, gameState.playerCar.position.y + cameraHeight, targetZ),
+                    0.1
+                );
+                gameState.camera.lookAt(gameState.playerCar.position);
+
+                // Render
+                gameState.renderer.render(gameState.scene, gameState.camera);
+            }
+
+            gameLoop();
+        }
+
+        function updateCarPhysics() {
+            const acceleration = 0.2;
+            const deceleration = 0.15;
+            const maxSpeed = 0.5;
+            const rotationSpeed = 0.08;
+
+            // Handle input
+            if (gameState.keys['w'] || gameState.keys['arrowup']) {
+                gameState.physicsState.speed = Math.min(gameState.physicsState.speed + acceleration, maxSpeed);
+            } else if (gameState.keys['s'] || gameState.keys['arrowdown']) {
+                gameState.physicsState.speed = Math.max(gameState.physicsState.speed - acceleration, -maxSpeed * 0.5);
+            } else {
+                // Decelerate
+                if (gameState.physicsState.speed > 0) {
+                    gameState.physicsState.speed = Math.max(gameState.physicsState.speed - deceleration, 0);
+                } else if (gameState.physicsState.speed < 0) {
+                    gameState.physicsState.speed = Math.min(gameState.physicsState.speed + deceleration, 0);
+                }
+            }
+
+            // Handle rotation
+            if (gameState.keys['a'] || gameState.keys['arrowleft']) {
+                gameState.physicsState.rotation += rotationSpeed;
+            }
+            if (gameState.keys['d'] || gameState.keys['arrowright']) {
+                gameState.physicsState.rotation -= rotationSpeed;
+            }
+
+            // Update position
+            gameState.physicsState.position.x += Math.sin(gameState.physicsState.rotation) * gameState.physicsState.speed;
+            gameState.physicsState.position.z += Math.cos(gameState.physicsState.rotation) * gameState.physicsState.speed;
+
+            // Boundary checking
+            gameState.physicsState.position.x = Math.max(-30, Math.min(30, gameState.physicsState.position.x));
+            gameState.physicsState.position.z = Math.max(-30, Math.min(30, gameState.physicsState.position.z));
+
+            // Collision detection with walls
+            checkCollisions();
+
+            // Update car object
+            gameState.playerCar.position.copy(gameState.physicsState.position);
+            gameState.playerCar.rotation.y = gameState.physicsState.rotation;
+        }
+
+        function checkCollisions() {
+            if (!gameState.playerCar) return;
+
+            const carSize = 0.9;
+            const carBox = new THREE.Box3().setFromObject(gameState.playerCar);
+
+            gameState.scene.traverse((object) => {
+                if (object.userData.type === 'wall') {
+                    const wallBox = new THREE.Box3().setFromObject(object);
+                    
+                    if (carBox.intersectsBox(wallBox)) {
+                        // Push car back
+                        gameState.physicsState.position.x -= Math.sin(gameState.physicsState.rotation) * gameState.physicsState.speed * 2;
+                        gameState.physicsState.position.z -= Math.cos(gameState.physicsState.rotation) * gameState.physicsState.speed * 2;
+                        gameState.physicsState.speed *= 0.3;
+                    }
+                }
+            });
+        }
+
+        function updateGameHUD() {
+            const pos = gameState.physicsState.position;
+            document.getElementById('hudPosition').textContent = 
+                `X: ${pos.x.toFixed(1)} Y: ${pos.y.toFixed(1)} Z: ${pos.z.toFixed(1)}`;
+            document.getElementById('hudSpeed').textContent = 
+                (Math.abs(gameState.physicsState.speed) * 100).toFixed(0);
+            document.getElementById('hudPlayers').textContent = 
+                Object.keys(gameState.otherPlayers).length + 1;
+        }
+
+        function syncPlayerPosition() {
+            if (!gameState.currentRoom || !gameState.currentUser || !gameState.gameRunning) return;
+
+            const syncInterval = setInterval(() => {
+                if (!gameState.gameRunning) {
+                    clearInterval(syncInterval);
+                    return;
+                }
+
+                const pos = gameState.physicsState.position;
+                
+                db.collection('rooms').doc(gameState.currentRoom)
+                    .collection('players').doc(gameState.currentUser.uid).update({
+                        position: {
+                            x: pos.x,
+                            y: pos.y,
+                            z: pos.z
+                        },
+                        rotation: gameState.physicsState.rotation,
+                        car: gameState.selectedCar ? gameState.selectedCar.id : null,
+                        updatedAt: new Date()
+                    }).catch(err => console.error('Sync error:', err));
+            }, 100); // Sync every 100ms
+        }
+
+        function renderOtherPlayers() {
+            if (!gameState.currentRoom || !gameState.currentUser || !gameState.gameRunning) return;
+
+            db.collection('rooms').doc(gameState.currentRoom)
+                .collection('players').onSnapshot((snapshot) => {
+                    const playersHUD = document.getElementById('playersHUD');
+                    playersHUD.innerHTML = '<strong>Players Online:</strong><br>';
+
+                    snapshot.forEach((doc) => {
+                        const playerId = doc.id;
+                        const player = doc.data();
+                        const isSelf = playerId === gameState.currentUser.uid;
+
+                        if (!isSelf && player.position) {
+                            // Create or update other player's car
+                            if (!gameState.otherPlayers[playerId]) {
+                                const geometry = new THREE.BoxGeometry(0.8, 0.6, 1.8);
+                                const carData = gameState.cars.find(c => c.id === player.car);
+                                const color = carData ? carData.color : 0x00ff00;
+                                const material = new THREE.MeshStandardMaterial({ color: color });
+                                const car = new THREE.Mesh(geometry, material);
+                                car.castShadow = true;
+                                car.receiveShadow = true;
+                                
+                                gameState.scene.add(car);
+                                gameState.otherPlayers[playerId] = car;
+                            }
+
+                            // Update position
+                            const otherCar = gameState.otherPlayers[playerId];
+                            otherCar.position.set(player.position.x, player.position.y, player.position.z);
+                            otherCar.rotation.y = player.rotation || 0;
+                        } else if (!isSelf) {
+                            // Remove offline player's car
+                            if (gameState.otherPlayers[playerId]) {
+                                gameState.scene.remove(gameState.otherPlayers[playerId]);
+                                delete gameState.otherPlayers[playerId];
+                            }
+                        }
+
+                        // Update HUD
+                        const entry = document.createElement('div');
+                        entry.className = `player-entry ${isSelf ? 'self' : ''}`;
+                        entry.innerHTML = `<strong>${player.email.split('@')[0]}</strong>${isSelf ? ' (You)' : ''}`;
+                        playersHUD.appendChild(entry);
+                    });
+                });
+        }
+
+        function onWindowResize() {
+            if (!gameState.camera || !gameState.renderer) return;
+
+            gameState.camera.aspect = window.innerWidth / window.innerHeight;
+            gameState.camera.updateProjectionMatrix();
+            gameState.renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function exitGame() {
+            gameState.gameRunning = false;
+
+            // Clean up Three.js
+            if (gameState.renderer) {
+                gameState.renderer.dispose();
+                gameState.renderer.domElement.remove();
+            }
+
+            gameState.scene = null;
+            gameState.camera = null;
+            gameState.renderer = null;
+            gameState.playerCar = null;
+            gameState.otherPlayers = {};
+
+            showScreen('lobbyScreen');
+            updateRoomsList();
+        }
+
+        // ============================================
+        // AUTH STATE LISTENER
+        // ============================================
+        
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                gameState.currentUser = user;
+                document.getElementById('userEmail').textContent = user.email;
+                showScreen('lobbyScreen');
+                updateRoomsList();
+            } else {
+                gameState.currentUser = null;
+                gameState.currentRoom = null;
+                showScreen('loginScreen');
+            }
+        });
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+        
+        document.getElementById('loginBtn')?.addEventListener('click', loginUser);
+        document.getElementById('registerBtn')?.addEventListener('click', registerUser);
+        document.getElementById('createRoomBtn')?.addEventListener('click', createRoom);
+        document.getElementById('randomRoomBtn')?.addEventListener('click', joinRandomRoom);
+        document.getElementById('completeMapBtn')?.addEventListener('click', completeMap);
+
+        // ============================================
+        // KEYBOARD SHORTCUTS
+        // ============================================
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const activeScreen = document.querySelector('.screen.active').id;
+                
+                if (activeScreen === 'loginScreen') {
+                    loginUser();
+                } else if (activeScreen === 'registerScreen') {
+                    registerUser();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
