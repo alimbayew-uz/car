@@ -3,7 +3,6 @@
 
 [build]
   # No build step needed - pure static files
-  command = ""
   publish = "."
 
 # Caching strategy for assets
@@ -76,6 +75,3 @@
 #   port = 3000
 #   targetPort = 3000
 
-# Deployment timeout
-[build.environment]
-  timeout = 300
